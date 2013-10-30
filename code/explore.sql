@@ -43,6 +43,7 @@ SELECT  b.Name AS PostType,
         a.Body AS PostBody,
         c.Score AS CommentScore,
         c.Text AS CommentText
+        --,c.*
 FROM    Posts a,
         PostTypes b,
         Comments c
@@ -81,16 +82,22 @@ AND     d.Name = 'Answer'
 GROUP BY b.Name, c.Id, c.Score
 )
 SELECT  a.PostId,
-        a.NumVotes - b.NumVotes AS Score
+        a.NumVotes - COALESCE(b.NumVotes,0) AS Score
 FROM    (
         SELECT  PostId, NumVotes
         FROM    tblVoteAnswer
         WHERE   VoteType = 'UpMod'
-        ) a,
+        ) a LEFT JOIN
         (
         SELECT  PostId, NumVotes
         FROM    tblVoteAnswer
         WHERE   VoteType = 'DownMod'
         ) b
-WHERE   a.PostId = b.PostId
+        ON   a.PostId = b.PostId
 ORDER BY 2 DESC;
+
+
+-- Stack Overflow does not provide the userid of up/down votes
+SELECT  *
+FROM    Votes
+WHERE   PostId = 613218;   -- answer
