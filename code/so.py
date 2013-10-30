@@ -2,6 +2,8 @@
 # mostly includes iterators ...
 # @author xfalco
 
+import csv
+
 # CONSTANTS
 class CONSTANTS:
 
@@ -69,12 +71,12 @@ class FileIterator :
     self.f = filename
 
   def iterate(self, fnToCreateObjectFromArr) :
-    file = open(self.f)
+    file = open(self.f, 'rU')
     # read first line to ignore headers
-    file.readline()
-    for line in file :
-      arr = line.split(',')
-      yield fnToCreateObjectFromArr(arr)
+    reader = csv.reader(file, dialect='excel')
+    next(reader, None)
+    for list in reader :
+      yield fnToCreateObjectFromArr(list)
     file.close()
 
 # post iteration
@@ -101,16 +103,22 @@ class UserIterator(FileIterator) :
 
 
 class Post :
+ 
+  NON_EXISTENT = -88
+
   def __init__(self, arr) :
-    self.id = arr[0]
+    self.id = int(arr[0])
     self.postTypeId = arr[1]
     self.acceptedAnswerId = arr[2]
     self.parentId = arr[3]
     self.creationDate = arr[4]
-    self.score = arr[5]
+    self.score = int(arr[5])
     self.viewCount = arr[6]
     self.body = arr[7]
-    self.ownerUserId = arr[8]
+    if arr[8] :
+      self.ownerUserId = int(arr[8])
+    else :
+      self.ownerUserId = Post.NON_EXISTENT
     self.ownerDisplayName = arr[9]
     self.lastEditorUserId = arr[10]
     self.lastEditorDisplayName = arr[11]
@@ -126,7 +134,7 @@ class Post :
 
 class User :
   def __init__(self, arr) :
-    self.id = arr[0]
+    self.id = int(arr[0])
     self.reputation = arr[1]
     self.creationDate = arr[2]
     self.displayName = arr[3]
@@ -140,3 +148,4 @@ class User :
     self.profileImageUrl = arr[11]
     self.emailHash = arr[12]
     self.age = arr[13]
+
