@@ -1,0 +1,60 @@
+Darth fader --> (
+upvote = 720,
+downvote = 3, 
+q=[python, list, dictionary, sorting, tuples], 
+devin_rep = 18720
+darth_rep = 4297
+) 
+Devin 
+
+Devin  <-- x 717 (.68) Darth fader 
+Nas <-- x230 (.22) Darth fader
+Mark <-- x109 (.10) Darth fader
+
+Multiple Questioners and Answerers
+
+
+How to filter?
+ - Date
+ - Programming language
+
+
+Please review:
+- topic sensitive pagerank
+- intelligent surfer
+
+
+pagerank given tag
+
+Success measure
+- our rank vs SO reputation
+- ROC curve?
+- generalization, cross-validation
+
+
+SELECT  TOP 1000
+        *
+FROM    Users
+ORDER BY Reputation DESC;
+- Are upvote/downvotes received or given?
+
+http://data.stackexchange.com/stackoverflow/query/952/top-500-answerers-on-the-site
+
+Todo (next week):
+- extract data (useful filtering) (jf)
+  - commit SQL queries to github
+  - 1 at a time
+- implement vanilla pagerank in python on wiki (pk)
+  - implement new pagerank
+    (will topic specific work?)
+  - commit python to github
+- review success metric (xf)
+  - SQL queries to github
+- review papers (all)
+  - commit python/matlab to github
+  
+Nov 14
+
+next meeting: say something by fri
+
+
