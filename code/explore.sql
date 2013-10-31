@@ -101,3 +101,44 @@ ORDER BY 2 DESC;
 SELECT  *
 FROM    Votes
 WHERE   PostId = 613218;   -- answer
+
+/*
+WITH tblVoteAnswer (PostId, PostScore, OwnerUserId, VoteType, NumVotes) AS
+(
+SELECT  c.Id,
+        c.Score,
+        c.OwnerUserId,
+        b.Name,
+        COUNT(*)
+FROM    Votes a,
+        VoteTypes b,
+        Posts c,
+        PostTypes d
+WHERE   a.VoteTypeId = b.Id
+AND     a.PostId = c.Id
+AND     c.PostTypeId = d.Id
+AND     c.ParentId = 613183
+AND     d.Name = 'Answer'
+GROUP BY b.Name, c.Id, c.Score, c.OwnerUserId
+)
+SELECT  a.PostId,
+        a.OwnerUserId,
+        a.NumVotes - COALESCE(b.NumVotes,0) AS Score,
+        CASE WHEN (a.NumVotes + COALESCE(b.NumVotes,0)) > 0
+             THEN CAST(a.NumVotes AS DOUBLE PRECISION) / (a.NumVotes + COALESCE(b.NumVotes,0))
+             ELSE 0
+        END AS PosEval
+
+FROM    (
+        SELECT  PostId, OwnerUserId, NumVotes
+        FROM    tblVoteAnswer
+        WHERE   VoteType = 'UpMod'
+        ) a LEFT JOIN
+        (
+        SELECT  PostId, OwnerUserId, NumVotes
+        FROM    tblVoteAnswer
+        WHERE   VoteType = 'DownMod'
+        ) b
+        ON   a.PostId = b.PostId
+ORDER BY Score DESC;
+*/
