@@ -250,3 +250,202 @@ FROM    (
         ) b ON a.AnswerId = b.AnswerId
 ORDER BY PostType DESC, Score DESC;
 
+
+-- Multiple WITH is supported!!! YAY!!!
+WITH 
+tblOne (a) AS 
+(
+SELECT 1
+),
+tblTwo (b) AS 
+(
+SELECT 2
+)
+SELECT  a.a,
+        b.b
+FROM    tblOne a,
+        tblTwo b;
+
+
+--------------------------------------------------------------------------------
+-- Build network with filter
+--------------------------------------------------------------------------------
+
+-- Monthly statistics to decide filter for programming language and date range
+SELECT  a.TagName,
+        a.CreationYear,
+        a.CreationMonth,
+        COUNT(*) AS NumQuestions,
+        SUM(a.AnswerCount) AS SumAnswerCount,
+        AVG(CAST(a.AnswerCount AS DOUBLE PRECISION)) AS AvgAnswerCount,
+        STDEV(CAST(a.AnswerCount AS DOUBLE PRECISION)) AS StdevAnswerCount
+FROM    (
+        SELECT  b.TagName,
+                YEAR(c.CreationDate) AS CreationYear,
+                MONTH(c.CreationDate) AS CreationMonth,
+                c.*
+        FROM    PostTags a,
+                Tags b,
+                Posts c
+        WHERE   a.TagId = b.Id
+        AND     b.TagName IN ('python', 'c++', 'ios', 'sql', 'linux')
+        AND     a.PostId = c.Id
+        ) a
+GROUP BY a.TagName, a.CreationYear, a.CreationMonth
+ORDER BY 1,2,3;
+
+-- filter = (tag = python, question date = 2009 Mar)
+
+-- Questions: up/down votes, reputation
+SELECT  a.Id,
+        a.OwnerUserId,
+        SUM(CASE WHEN b.VoteTypeId = 2 THEN 1 ELSE 0 END) AS UpVotes,
+        SUM(CASE WHEN b.VoteTypeId = 3 THEN 1 ELSE 0 END) AS DownVotes,
+        a.Reputation
+FROM    (
+        SELECT  a.*,
+                e.Reputation
+        FROM    Posts a,
+                PostTypes b,
+                PostTags c,
+                Tags d,
+                Users e
+        WHERE   a.PostTypeId = b.Id
+        AND     a.Id = c.PostId
+        AND     c.TagId = d.Id
+        AND     a.OwnerUserId = e.Id
+        AND     b.Name = 'Question'
+        AND     d.TagName IN ('python')
+        AND     a.CreationDate BETWEEN '2009-03-01' AND '2009-03-31'
+        ) a LEFT JOIN
+        Votes b
+        ON a.Id = b.PostId
+GROUP BY a.Id, a.OwnerUserId, a.Reputation
+ORDER BY 1;
+
+
+-- Answers: up/down votes, reputation
+SELECT  a.Id,
+        a.ParentId,
+        a.OwnerUserId,
+        SUM(CASE WHEN b.VoteTypeId = 2 THEN 1 ELSE 0 END) AS UpVotes,
+        SUM(CASE WHEN b.VoteTypeId = 3 THEN 1 ELSE 0 END) AS DownVotes,
+        a.Reputation
+FROM    (
+        SELECT  a.*,
+                f.Reputation
+        FROM    Posts a,
+                PostTypes b,
+                PostTags c,
+                Tags d,
+                Posts e,
+                Users f
+        WHERE   a.PostTypeId = b.Id
+        AND     a.ParentId = c.PostId
+        AND     c.TagId = d.Id
+        AND     e.Id = a.ParentId
+        AND     a.OwnerUserId = f.Id
+        AND     b.Name = 'Answer'
+        AND     d.TagName IN ('python')
+        AND     e.CreationDate BETWEEN '2009-03-01' AND '2013-03-31'
+        ) a LEFT JOIN
+        Votes b
+        ON a.Id = b.PostId
+GROUP BY a.Id, a.ParentId, a.OwnerUserId, a.Reputation
+ORDER BY 1;
+
+
+-- Network
+WITH
+tblQuestion (Id, OwnerUserId, UpVotes, DownVotes, Reputation) AS 
+(
+SELECT  a.Id,
+        a.OwnerUserId,
+        SUM(CASE WHEN b.VoteTypeId = 2 THEN 1 ELSE 0 END) AS UpVotes,
+        SUM(CASE WHEN b.VoteTypeId = 3 THEN 1 ELSE 0 END) AS DownVotes,
+        a.Reputation
+FROM    (
+        SELECT  a.*,
+                e.Reputation
+        FROM    Posts a,
+                PostTypes b,
+                PostTags c,
+                Tags d,
+                Users e
+        WHERE   a.PostTypeId = b.Id
+        AND     a.Id = c.PostId
+        AND     c.TagId = d.Id
+        AND     a.OwnerUserId = e.Id
+        AND     b.Name = 'Question'
+        AND     d.TagName IN ('python')
+        AND     a.CreationDate BETWEEN '2009-03-01' AND '2009-03-31'
+        ) a LEFT JOIN
+        Votes b
+        ON a.Id = b.PostId
+GROUP BY a.Id, a.OwnerUserId, a.Reputation
+),
+tblAnswer (Id, ParentId, OwnerUserId, UpVotes, DownVotes, Reputation) AS 
+(
+SELECT  a.Id,
+        a.ParentId,
+        a.OwnerUserId,
+        SUM(CASE WHEN b.VoteTypeId = 2 THEN 1 ELSE 0 END) AS UpVotes,
+        SUM(CASE WHEN b.VoteTypeId = 3 THEN 1 ELSE 0 END) AS DownVotes,
+        a.Reputation
+FROM    (
+        SELECT  a.*,
+                f.Reputation
+        FROM    Posts a,
+                PostTypes b,
+                PostTags c,
+                Tags d,
+                Posts e,
+                Users f
+        WHERE   a.PostTypeId = b.Id
+        AND     a.ParentId = c.PostId
+        AND     c.TagId = d.Id
+        AND     e.Id = a.ParentId
+        AND     a.OwnerUserId = f.Id
+        AND     b.Name = 'Answer'
+        AND     d.TagName IN ('python')
+        AND     e.CreationDate BETWEEN '2009-03-01' AND '2009-03-31'
+        ) a LEFT JOIN
+        Votes b
+        ON a.Id = b.PostId
+GROUP BY a.Id, a.ParentId, a.OwnerUserId, a.Reputation
+)
+SELECT  a.QuestionId,
+        a.SrcNodeId,
+        a.DstNodeId,
+        a.EdgeAttrUpVotes,
+        a.EdgeAttrDownVotes,
+        a.EdgeAttrSrcRep,
+        a.EdgeAttrDstRep,
+        b.Tags AS EdgeAttrTags
+FROM    (
+        SELECT  a.Id AS QuestionId,
+                a.OwnerUserId AS SrcNodeId,
+                b.OwnerUserId AS DstNodeId,
+                b.UpVotes AS EdgeAttrUpVotes,
+                b.DownVotes AS EdgeAttrDownVotes,
+                a.Reputation AS EdgeAttrSrcRep,
+                b.Reputation AS EdgeAttrDstRep
+        FROM    tblQuestion a,
+                tblAnswer b
+        WHERE   a.Id = b.ParentId
+        ) a,
+        Posts b
+WHERE   a.QuestionId = b.Id 
+-- AND     a.QuestionId = 613183  -- DEBUG 1
+-- AND     a.DstNodeId = 2786  -- DEBUG 2
+ORDER BY a.SrcNodeId, a.DstNodeId;
+
+
+
+
+
+
+
+
+
+
