@@ -12,9 +12,10 @@ next(reader, None)
 for list in reader :
   tags = list[7]
   tagString = ','.join(re.findall(r"[\w']+", tags))
+  tagString = "\"" + tagString + "\""
   list[7] = tagString
   list.append('\n')
-  outputFile.write(' '.join(list))
+  outputFile.write(','.join(list))
 
 
 inputFile.close()
