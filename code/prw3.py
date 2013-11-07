@@ -141,7 +141,7 @@ def get_w_out_PR_ratio(graph, src_node_id, dst_node_id):
     # Returns the weighted PageRank to be transferred from the specified source node to the specified destination node
     
     source_node = graph.GetNI(src_node_id)
-
+    
     total_weight = 0.0
     pr_weight = 0.0
 
@@ -157,9 +157,12 @@ def get_w_out_PR_ratio(graph, src_node_id, dst_node_id):
     edge_weight = graph.GetFltAttrDatE(edge_id, "EValFlt")
 
     # Step 3: calculate the PR condsidering wieghts
-
-    pr_weight = edge_weight / total_weight
-
+    
+    try:
+        pr_weight = edge_weight / total_weight
+    except ZeroDivisionError:
+        print "error --> div by zero in edge: src_node_id, dst_node_id"
+        
     return pr_weight
     
 
