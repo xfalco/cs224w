@@ -16,13 +16,22 @@
 --------------------------------------------------------------------------------
 
 WITH
-tblQuestion (Id, OwnerUserId, UpVotes, DownVotes, Reputation) AS 
+tblQuestion (Id, OwnerUserId, CreationDate,
+             UpVotes, DownVotes,
+             AnswerCount, ViewCount, CommentCount, FavoriteCount,
+             ClosedDate, Reputation) AS 
 (
 SELECT  a.Id,
         a.OwnerUserId,
+        a.CreationDate,
         SUM(CASE WHEN b.VoteTypeId = 2 THEN 1 ELSE 0 END) AS UpVotes,
         SUM(CASE WHEN b.VoteTypeId = 3 THEN 1 ELSE 0 END) AS DownVotes,
-        a.Reputation
+        a.AnswerCount,
+        a.ViewCount,
+        a.CommentCount,
+        a.FavoriteCount,
+        a.ClosedDate,
+        a.Reputation -- * (python votes / total votes)
 FROM    (
         SELECT  a.*,
                 e.Reputation
@@ -37,33 +46,42 @@ FROM    (
         AND     a.OwnerUserId = e.Id
         AND     b.Name = 'Question'
         AND     d.TagName IN ('python')
-        --AND     a.CreationDate BETWEEN '2000-01-01' AND '2008-12-31'
-        --AND     a.CreationDate BETWEEN '2009-01-01' AND '2009-12-31'
-        --AND     a.CreationDate BETWEEN '2010-01-01' AND '2010-06-30'
-        --AND     a.CreationDate BETWEEN '2010-07-01' AND '2010-12-31'
-        --AND     a.CreationDate BETWEEN '2011-01-01' AND '2011-06-30'
-        --AND     a.CreationDate BETWEEN '2011-07-01' AND '2011-12-31'
-        --AND     a.CreationDate BETWEEN '2012-01-01' AND '2012-03-31'
-        --AND     a.CreationDate BETWEEN '2012-04-01' AND '2012-06-30'
-        --AND     a.CreationDate BETWEEN '2012-07-01' AND '2012-09-30'
-        --AND     a.CreationDate BETWEEN '2012-10-01' AND '2012-12-31'
-        --AND     a.CreationDate BETWEEN '2013-01-01' AND '2013-03-31'
-        --AND     a.CreationDate BETWEEN '2013-04-01' AND '2013-06-30'
-        --AND     a.CreationDate BETWEEN '2013-07-01' AND '2013-09-30'
+        AND     a.CreationDate BETWEEN '2000-01-01' AND '2009-01-01'
+        --AND     a.CreationDate BETWEEN '2009-01-01' AND '2010-01-01'
+        --AND     a.CreationDate BETWEEN '2010-01-01' AND '2010-07-01'
+        --AND     a.CreationDate BETWEEN '2010-07-01' AND '2011-01-01'
+        --AND     a.CreationDate BETWEEN '2011-01-01' AND '2011-07-01'
+        --AND     a.CreationDate BETWEEN '2011-07-01' AND '2012-01-01'
+        --AND     a.CreationDate BETWEEN '2012-01-01' AND '2012-04-01'
+        --AND     a.CreationDate BETWEEN '2012-04-01' AND '2012-07-01'
+        --AND     a.CreationDate BETWEEN '2012-07-01' AND '2012-10-01'
+        --AND     a.CreationDate BETWEEN '2012-10-01' AND '2013-01-01'
+        --AND     a.CreationDate BETWEEN '2013-01-01' AND '2013-04-01'
+        --AND     a.CreationDate BETWEEN '2013-04-01' AND '2013-07-01'
+        --AND     a.CreationDate BETWEEN '2013-07-01' AND '2013-10-01'
         --AND     a.CreationDate BETWEEN '2013-10-01' AND '2013-12-31'
         ) a LEFT JOIN
         Votes b
         ON a.Id = b.PostId
-GROUP BY a.Id, a.OwnerUserId, a.Reputation
+GROUP BY a.Id, a.OwnerUserId, a.CreationDate, a.AnswerCount, a.ViewCount, a.CommentCount, a.FavoriteCount, a.ClosedDate, a.Reputation
 ),
-tblAnswer (Id, ParentId, OwnerUserId, UpVotes, DownVotes, Reputation) AS 
+tblAnswer   (Id, ParentId, OwnerUserId, CreationDate,
+             UpVotes, DownVotes,
+             AnswerCount, ViewCount, CommentCount, FavoriteCount,
+             ClosedDate, Reputation) AS 
 (
 SELECT  a.Id,
         a.ParentId,
         a.OwnerUserId,
+        a.CreationDate,
         SUM(CASE WHEN b.VoteTypeId = 2 THEN 1 ELSE 0 END) AS UpVotes,
         SUM(CASE WHEN b.VoteTypeId = 3 THEN 1 ELSE 0 END) AS DownVotes,
-        a.Reputation
+        a.AnswerCount,
+        a.ViewCount,
+        a.CommentCount,
+        a.FavoriteCount,
+        a.ClosedDate,
+        a.Reputation --* (python votes / total votes)
 FROM    (
         SELECT  a.*,
                 f.Reputation
@@ -80,45 +98,54 @@ FROM    (
         AND     a.OwnerUserId = f.Id
         AND     b.Name = 'Answer'
         AND     d.TagName IN ('python')
-        --AND     e.CreationDate BETWEEN '2000-01-01' AND '2008-12-31'
-        --AND     e.CreationDate BETWEEN '2009-01-01' AND '2009-12-31'
-        --AND     e.CreationDate BETWEEN '2010-01-01' AND '2010-06-30'
-        --AND     e.CreationDate BETWEEN '2010-07-01' AND '2010-12-31'
-        --AND     e.CreationDate BETWEEN '2011-01-01' AND '2011-06-30'
-        --AND     e.CreationDate BETWEEN '2011-07-01' AND '2011-12-31'
-        --AND     e.CreationDate BETWEEN '2012-01-01' AND '2012-03-31'
-        --AND     e.CreationDate BETWEEN '2012-04-01' AND '2012-06-30'
-        --AND     e.CreationDate BETWEEN '2012-07-01' AND '2012-09-30'
-        --AND     e.CreationDate BETWEEN '2012-10-01' AND '2012-12-31'
-        --AND     e.CreationDate BETWEEN '2013-01-01' AND '2013-03-31'
-        --AND     e.CreationDate BETWEEN '2013-04-01' AND '2013-06-30'
-        --AND     e.CreationDate BETWEEN '2013-07-01' AND '2013-09-30'
+        AND     e.CreationDate BETWEEN '2000-01-01' AND '2009-01-01'
+        --AND     e.CreationDate BETWEEN '2009-01-01' AND '2010-01-01'
+        --AND     e.CreationDate BETWEEN '2010-01-01' AND '2010-07-01'
+        --AND     e.CreationDate BETWEEN '2010-07-01' AND '2011-01-01'
+        --AND     e.CreationDate BETWEEN '2011-01-01' AND '2011-07-01'
+        --AND     e.CreationDate BETWEEN '2011-07-01' AND '2012-01-01'
+        --AND     e.CreationDate BETWEEN '2012-01-01' AND '2012-04-01'
+        --AND     e.CreationDate BETWEEN '2012-04-01' AND '2012-07-01'
+        --AND     e.CreationDate BETWEEN '2012-07-01' AND '2012-10-01'
+        --AND     e.CreationDate BETWEEN '2012-10-01' AND '2013-01-01'
+        --AND     e.CreationDate BETWEEN '2013-01-01' AND '2013-04-01'
+        --AND     e.CreationDate BETWEEN '2013-04-01' AND '2013-07-01'
+        --AND     e.CreationDate BETWEEN '2013-07-01' AND '2013-10-01'
         --AND     e.CreationDate BETWEEN '2013-10-01' AND '2013-12-31'
         ) a LEFT JOIN
         Votes b
         ON a.Id = b.PostId
-GROUP BY a.Id, a.ParentId, a.OwnerUserId, a.Reputation
+GROUP BY a.Id, a.ParentId, a.OwnerUserId, a.CreationDate, a.AnswerCount, a.ViewCount, a.CommentCount, a.FavoriteCount, a.ClosedDate, a.Reputation
 )
-SELECT  a.SrcNodeId,
-        a.DstNodeId,
-        a.QuestionId AS EdgeAttrQuestionId,
-        a.EdgeAttrUpVotes,
-        a.EdgeAttrDownVotes,
-        a.EdgeAttrSrcRep,
-        a.EdgeAttrDstRep,
-        b.Tags AS EdgeAttrTags
+SELECT  a.*,
+        b.Tags AS Q_Tags
 FROM    (
-        SELECT  a.Id AS QuestionId,
-                a.OwnerUserId AS SrcNodeId,
+        SELECT  a.OwnerUserId AS SrcNodeId,
                 b.OwnerUserId AS DstNodeId,
-                b.UpVotes AS EdgeAttrUpVotes,
-                b.DownVotes AS EdgeAttrDownVotes,
-                a.Reputation AS EdgeAttrSrcRep,
-                b.Reputation AS EdgeAttrDstRep
+                a.Id AS Q_Id,
+                a.CreationDate AS Q_CreationDate,
+                a.UpVotes AS Q_UpVotes,
+                a.DownVotes AS Q_DownVotes,
+                a.AnswerCount AS Q_AnswerCount, 
+                a.ViewCount AS Q_ViewCount, 
+                a.CommentCount AS Q_CommentCount, 
+                a.FavoriteCount AS Q_FavoriteCount,
+                a.ClosedDate AS Q_ClosedDate,
+                a.Reputation AS Q_Reputation,
+                b.Id AS A_Id,
+                b.CreationDate AS A_CreationDate,
+                b.UpVotes AS A_UpVotes,
+                b.DownVotes AS A_DownVotes,
+                --b.AnswerCount AS A_AnswerCount, 
+                --b.ViewCount AS A_ViewCount,
+                b.CommentCount AS A_CommentCount, 
+                --b.FavoriteCount AS A_FavoriteCount,
+                --b.ClosedDate AS A_ClosedDate,
+                b.Reputation AS A_Reputation
         FROM    tblQuestion a,
                 tblAnswer b
         WHERE   a.Id = b.ParentId
         ) a,
         Posts b
-WHERE   a.QuestionId = b.Id 
-ORDER BY a.QuestionId, a.DstNodeId;
+WHERE   a.Q_Id = b.Id 
+ORDER BY a.Q_Id, a.DstNodeId;
