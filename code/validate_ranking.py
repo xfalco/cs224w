@@ -2,32 +2,31 @@
 # uses "../data/network_python.graph" if none passed in
 # @author xfalco
 
-import sys
 import snap
 import prw3
 import csv
 from math import log
 
-if len(sys.argv) is 1 :
-   filename = "../data/network_python.graph"
-else :
-   filename = sys.argv[1]
-
+FILE_NETWORK = "../data/network_python.graph"
+FILE_PR = "../data/pagerank_net.txt"
+FILE_HITS = "../data/hits_net.txt"
 
 #
-# LOAD FILE
+# LOAD FILES
 #
 def loadFile(CUT_OFF_RANK) : 
   global soHashMap
   global prHashMap
+  global hitsHashMap
   global questions
   questions = {}
   weights = {}
   soReputations = {}
   prReputations = {}
+  hitsReputations = {}
   graph = snap.TNEANet.New()
 
-  file = open(filename, 'rU')
+  file = open(FILE_NETWORK, 'rU')
   reader = csv.reader(file, dialect='excel')
   for list in reader :
     srcNId = int(list[0])
@@ -53,17 +52,31 @@ def loadFile(CUT_OFF_RANK) :
     questions[eAttrQId][dstNId] = net
   file.close()
   
-  file = open('../data/pagerank_net.txt', 'rU') 
+  file = open(FILE_PR, 'rU') 
   reader = csv.reader(file, dialect='excel')
   next(reader, None)
   for list in reader :
     id = int(list[0])
+    if not id in soReputations:
+      continue
     rank = float(list[1])
     prReputations[id] = rank
+  file.close()
+
+  file = open(FILE_HITS, 'rU')
+  reader = csv.reader(file, dialect='excel')
+  next(reader, None)
+  for list in reader :
+    id = int(list[0])
+    if not id in soReputations:
+      continue
+    rank = float(list[1])
+    hitsReputations[id] = rank
   file.close()
   
   sortedSO = sorted(soReputations, key=lambda l: soReputations[l], reverse=True)
   sortedPR = sorted(prReputations, key=lambda l: prReputations[l], reverse=True)
+  sortedHits = sorted(hitsReputations, key=lambda l: hitsReputations[l], reverse=True)
 
   soHashMap = {}
   for i in xrange(len(sortedSO)):
@@ -71,6 +84,9 @@ def loadFile(CUT_OFF_RANK) :
   prHashMap = {}
   for i in xrange(len(sortedPR)):
     prHashMap[sortedPR[i]] = i
+  hitsHashMap = {}
+  for i in xrange(len(sortedHits)):
+    hitsHashMap[sortedHits[i]] = i
 
 ##########################
 ## HOW RANKINGS FARED
@@ -130,6 +146,9 @@ def loadAndTest(CUT_OFF_RANK):
   (wrongSo, rightSo) = numRightTopAnswers(prHashMap)
   rightTop['percpr'] = float(rightSo) * 100 / (rightSo + wrongSo)
   rightTop['numpr'] = float(rightSo + wrongSo)
+  (wrongSo, rightSo) = numRightTopAnswers(hitsHashMap)
+  rightTop['perchits'] = float(rightSo) * 100 / (rightSo + wrongSo)
+  rightTop['numhits'] = float(rightSo + wrongSo)
   
   (wrongSo, rightSo) = numRightRankings(soHashMap)
   rightRanks['percso'] = float(rightSo) * 100 / float(rightSo + wrongSo)
@@ -137,15 +156,18 @@ def loadAndTest(CUT_OFF_RANK):
   (wrongSo, rightSo) = numRightRankings(prHashMap)
   rightRanks['percpr'] = float(rightSo) * 100 / float(rightSo + wrongSo)
   rightRanks['numpr'] = float(rightSo + wrongSo)
+  (wrongSo, rightSo) = numRightRankings(hitsHashMap)
+  rightRanks['perchits'] = float(rightSo) * 100 / float(rightSo + wrongSo)
+  rightRanks['numhits'] = float(rightSo + wrongSo)
 
 results = {}
 for CUT_OFF in range(1, 92, 5):
   loadAndTest(CUT_OFF)
-print "========================================================================="
-print "\t| top answer % \t| top answer # \t| all answers %\t| all answers #\t|"
-print "cut off\t| SO\t| PR\t| SO\t| PR\t| SO\t| PR\t| SO\t| PR\t|"
-print "-------------------------------------------------------------------------"
+print "========================================================================================================="
+print "\t| top answer % \t\t| top answer # \t\t| all answers %\t\t| all answers #\t\t|"
+print "cut off\t| SO\t| PR\t| HITS\t| SO\t| PR\t| HITS\t| SO\t| PR\t| HITS\t| SO\t| PR\t| HITS\t|"
+print "---------------------------------------------------------------------------------------------------------"
 for rank in sorted(results):
   meth1 = results[rank][RIGHT_TOP]
   meth2 = results[rank][RIGHT_RANKS]
-  print "%d\t| %.2f\t| %.2f\t|%.0f\t|%.0f\t| %.2f\t| %.2f\t|%.0f\t|%.0f\t|" % (rank, meth1['percso'], meth1['percpr'], meth1['numso'], meth1['numpr'], meth2['percso'], meth2['percpr'], meth2['numso'], meth2['numpr'])
+  print "%d\t| %.2f\t| %.2f\t| %.2f\t|%.0f\t|%.0f\t|%.0f\t| %.2f\t| %.2f\t| %.2f\t|%.0f\t|%.0f\t|%.0f\t|" % (rank, meth1['percso'], meth1['percpr'],meth1['perchits'], meth1['numso'], meth1['numpr'], meth1['numhits'], meth2['percso'], meth2['percpr'], meth2['perchits'], meth2['numso'], meth2['numpr'], meth2['numhits'])

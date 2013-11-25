@@ -23,7 +23,7 @@ soReputations = {}
 prReputations = {}
 graph = snap.TNEANet.New()
 
-CUT_OFF_RANK = 5
+CUT_OFF_RANK = 1
 
 file = open(filename, 'rU')
 reader = csv.reader(file, dialect='excel')
@@ -40,11 +40,12 @@ for list in reader :
   if not key in weights:
     weights[key] = 0
   weights[key] = weights[key] + eAttrUpVotes - eAttrDownVotes
-  soReputations[srcNId] = eAttrSrcRep
-  soReputations[dstNId] = eAttrDstRep
   net = eAttrUpVotes - eAttrDownVotes
   if net < CUT_OFF_RANK:
     continue
+  soReputations[srcNId] = eAttrSrcRep
+  soReputations[dstNId] = eAttrDstRep
+  net = eAttrUpVotes - eAttrDownVotes
   if not eAttrQId in questions :
     questions[eAttrQId] = {}
   questions[eAttrQId][dstNId] = net
@@ -94,8 +95,9 @@ prw3.GetPageRankPy_w(graph)
 
 # PK - I guess you no longer need to read this file...
 
-file = open('pagerank_no_title.txt', 'rU') 
+file = open('../data/pagerank_net.txt', 'rU') 
 reader = csv.reader(file, dialect='excel')
+next(reader, None)
 for list in reader :
   id = int(list[0])
   rank = float(list[1])
@@ -129,13 +131,13 @@ print "Computing differences between the two rankings"
 nswaps = 0
 seen = set()
 numElems = len(outOfOrder)
-for i in xrange(numElems):
-  if i not in seen:           
-    j = i # begin new cycle that starts with 'i'
-    while outOfOrder[j] != i: # (i o(i) o(o(i)) ...)
-      j = outOfOrder[j]
-      seen.add(j)
-      nswaps += 1
+#for i in xrange(numElems):
+#  if i not in seen:           
+#    j = i # begin new cycle that starts with 'i'
+#    while outOfOrder[j] != i: # (i o(i) o(o(i)) ...)
+#      j = outOfOrder[j]
+#      seen.add(j)
+#      nswaps += 1
 
 print "Number of swaps between two rankings : %d (%d elements)" % (nswaps, len(outOfOrder))
 
@@ -150,20 +152,24 @@ def numWrongRankings (rankingHashMap) :
   for question in questions.keys():
     questionSort = sorted(questions[question], key=lambda l : questions[question][l], reverse=True)
     good = True
-    for i in xrange(1,len(questionSort)):
-      if rankingHashMap[questionSort[i]] < rankingHashMap[questionSort[0]]:
-        good = False
-        break
-    if good:
-      numRight += 1
-    else :
-      numWrong += 1
-    #for i in xrange(len(questionSort)):
-    #  for j in xrange(i):
-    #    if rankingHashMap[questionSort[j]] <= rankingHashMap[questionSort[i]] :
-    #      numRight += 1
-    #    else :
-    #      numWrong += 1
+    #for i in xrange(1,len(questionSort)):
+    #  if rankingHashMap[questionSort[i]] < rankingHashMap[questionSort[0]]:
+    #    good = False
+    #    break
+    #if good:
+    #  numRight += 1
+    #else :
+    #  numWrong += 1
+    for i in xrange(len(questionSort)):
+      for j in xrange(i):
+        if not questionSort[j] in rankingHashMap:
+          continue
+        if not questionSort[i] in rankingHashMap:
+          continue
+        if rankingHashMap[questionSort[j]] <= rankingHashMap[questionSort[i]] :
+          numRight += 1
+        else :
+          numWrong += 1
   return (numWrong, numRight)
 
 (wrongSo, rightSo) = numWrongRankings(soHashMap)
