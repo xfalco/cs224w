@@ -92,12 +92,15 @@ def loadFile(CUT_OFF_RANK) :
 ## HOW RANKINGS FARED
 ##########################
 
+
 def numRightTopAnswers (rankingHashMap) :
   numWrong = 0
   numRight = 0
   for question in questions.keys():
     questionSort = sorted(questions[question], key=lambda l : questions[question][l], reverse=True)
     good = True
+    if len(questionSort) is 1:
+      continue
     for i in xrange(1,len(questionSort)):
       if not questionSort[i] in rankingHashMap:
           continue
@@ -119,6 +122,8 @@ def numRightRankings (rankingHashMap) :
   for question in questions.keys():
     questionSort = sorted(questions[question], key=lambda l : questions[question][l], reverse=True)
     good = True
+    if len(questionSort) is 1:
+      continue
     for i in xrange(len(questionSort)):
       for j in xrange(i):
         if not questionSort[j] in rankingHashMap:
